@@ -71,4 +71,22 @@ public class MemoController {
 
         return responseList;//ResponseDto 타입 객체들을 담은 리스트를 반환함 -> 요청에 대한 응답
     }
+
+    //---------UPDATE API----------
+    @PutMapping("/memos/{id}") // 받아올 데이터의 인덱스
+    public Long updateMemo(@PathVariable Long id, @RequestBody MemoRequestDto requestDto){
+        // @PathVariable로는 클라이언트 URL로부터 /{id}가 넘어오니 PathVariable로 받아오고,
+        // 업데이트할 내용 등은 Body로부터 Json형태 데이터가 넘어 올 것이니 Create랑 동일하게 @RequestBody로 받아온다.
+
+        // 해당 메모가 DB에 존재하는지 확인
+        if(memoList.containsKey(id)) {//key값에 해당 index메모가 있는지
+            // 해당 메모 가져오기
+            Memo memo = memoList.get(id);
+            // memo 수정
+            memo.update(requestDto);
+            return memo.getId();
+        }else {
+            throw new IllegalArgumentException("선택한 메모는 존재하지 않습니다.");
+        }
+    }
 }
