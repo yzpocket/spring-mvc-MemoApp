@@ -52,4 +52,23 @@ public class MemoController {
         //어떠한 API에서 DATA는 출입 할때 Json->객체, 반환 할 때 객체->Json 변환 과정이 필요한 것으로 정리가 된다.
         //이는 Flask Framework에서도 HTTP 통신하는 fetch 함수에서 data를 jsonify로 변환하던 과정과 동일하다는 것이다.
     }
+
+    //--------READ API---------
+    @GetMapping("/memos")//[0] READ API는 Get 메소드를 사용한다. 처리할 URL을 입력한다.
+    public List<MemoResponseDto> getMemos(){
+        //[1] DB로부터 데이터(Entity 실질 객체 상태) 가져오고
+        // Entity 객체를 -> ResponseDto 로 변환 ------- 반환하기 위한 준비 -------
+        //여기선 DB대신 맵을 쓰고 있다.
+        //Map -> MemoResponseDto타입의 List 변환
+        List<MemoResponseDto> responseList = memoList.values().stream()
+                .map(MemoResponseDto::new).toList();
+        //memoList부분은 DB의 모든 메모를 가져옴
+        //.values().stream()부분은 반복문처럼 모두 순회하면서
+        //.map(MemoResponseDto::new)부분은 하나씩 나온 것들을 MemoResponseDto 생성자를 통해 MemoResponseDto 타입의 객체로 만들고
+        //.toList()로 그 객체들을 모은(MemoResponseDto타입의 모든 메모들)을 List에 담음
+
+        //스트림 어려우면 반복문으로 동일한 로직 짜도됨.
+
+        return responseList;//ResponseDto 타입 객체들을 담은 리스트를 반환함 -> 요청에 대한 응답
+    }
 }
