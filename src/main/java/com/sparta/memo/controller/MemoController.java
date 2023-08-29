@@ -3,9 +3,18 @@ package com.sparta.memo.controller;
 import com.sparta.memo.dto.MemoRequestDto;
 import com.sparta.memo.dto.MemoResponseDto;
 import com.sparta.memo.entity.Memo;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+//import java.util.Collections;
+import java.util.List;
 
 // 현재 클라이언트는 HTML로 구성, 버튼의 js onclick함수를 통해 Ajax로 데이터 담아 요청하도록 구현되어 있다.
 // 예로, 아래처럼 구현되어 있으며 각 기능 함수마다 메소드를 구분해두었다.
@@ -26,9 +35,18 @@ import java.util.*;
 @RestController // "이 클래스는 컨트롤러 역할 입니다." 표기
 @RequestMapping("/api") // 중복URL 제거
 public class MemoController {
-    //--------DB---------
-    private final Map<Long, Memo> memoList = new HashMap<>(); // DB가 없기 때문에 우선 맵으로 DB대신 테스트용으로 사용.
+    //--------JDBC이후 DB 커넥션 부분---------
+    private final JdbcTemplate jdbcTemplate;
+    public MemoController(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+    //--------DB전에 맵에 저장하던것---------
+    //private final Map<Long, Memo> memoList = new HashMap<>(); // DB가 없기 때문에 우선 맵으로 DB대신 테스트용으로 사용.
     // << ------------- [질문] 테스트 코드를 만든다 할 때는 실제로 이런 배열이나 컬렉션 객체로 확인하는지? 아니면 DB 커넥션까지 해서 테스트하는지.
+
+
+
+    /*-------------JDBC 이전 맵에 저장하던 코드-------------
     //--------CREATE API---------
     @PostMapping("/memos")//[0] CREATE API는 Post 메소드를 사용한다. 처리할 URL을 입력한다.
     public MemoResponseDto createMemo(@RequestBody MemoRequestDto requestDto){ // [1]Json이 올꺼다? @RequestBody로 Dto로 받을 매개변수 바로 생각해야함.
@@ -52,7 +70,39 @@ public class MemoController {
         //어떠한 API에서 DATA는 출입 할때 Json->객체, 반환 할 때 객체->Json 변환 과정이 필요한 것으로 정리가 된다.
         //이는 Flask Framework에서도 HTTP 통신하는 fetch 함수에서 data를 jsonify로 변환하던 과정과 동일하다는 것이다.
     }
+    */
+    //---------------JDBC 커넥션 연결 이후 CREATE--------------
+    @PostMapping("/memos")
+    public MemoResponseDto createMemo(@RequestBody MemoRequestDto requestDto) {
+        // RequestDto -> Entity
+        Memo memo = new Memo(requestDto);
 
+        // DB 저장
+        KeyHolder keyHolder = new GeneratedKeyHolder(); // 기본 키를 반환받기 위한 객체
+
+        //String sql DML문장이 실행됨
+        String sql = "INSERT INTO memo (username, contents) VALUES (?, ?)"; // <--- username, contents 각각 동적으로 아래 setString으로 결정하게함
+        jdbcTemplate.update( con -> {
+                    PreparedStatement preparedStatement = con.prepareStatement(sql,
+                            Statement.RETURN_GENERATED_KEYS);
+
+                    preparedStatement.setString(1, memo.getUsername()); // <--- 이것이 username
+                    preparedStatement.setString(2, memo.getContents()); // <--- 이것이 contents
+                    return preparedStatement;
+                },
+                keyHolder);
+
+        // DB Insert 후 받아온 기본키 확인
+        Long id = keyHolder.getKey().longValue();
+        memo.setId(id);
+
+        // Entity -> ResponseDto
+        MemoResponseDto memoResponseDto = new MemoResponseDto(memo);
+
+        return memoResponseDto;
+    }
+
+    /* -------------JDBC 이전 맵에서 읽던 코드-------------
     //--------READ API---------
     @GetMapping("/memos")//[0] READ API는 Get 메소드를 사용한다. 처리할 URL을 입력한다.
     public List<MemoResponseDto> getMemos(){
@@ -71,7 +121,30 @@ public class MemoController {
 
         return responseList;//ResponseDto 타입 객체들을 담은 리스트를 반환함 -> 요청에 대한 응답
     }
+    */
+    //---------------JDBC 커넥션 연결 이후 READ--------------
+    @GetMapping("/memos")
+    public List<MemoResponseDto> getMemos() {
+        // DB 조회
+        String sql = "SELECT * FROM memo";
 
+        return jdbcTemplate.query(sql, new RowMapper<MemoResponseDto>() {
+            @Override
+            public MemoResponseDto mapRow(ResultSet rs, int rowNum) throws SQLException { // <--- mapRow가 마치 반복문처럼 메모 전체를 순회하는데,
+                // memo 전체를 돌면서 각 행의 데이터를 ResultSet rs에 담아서,
+                // 아래 변수에 할당하게 되는데 이는 rs.get()을 통해 각 column에 해당하는, java로 따지면 객체의 필드에 해당하는 값들을 할당하면서
+                // 1개의 열 row, 이는 곧 1개의 Dto 객체를 완성시킴 * 전체 메모들을 순회하면서 Dto 리스트를 완성해서 해당 메서드 반환 타입인 List<MemoResponseDto>가 반환됨
+                // SQL 의 결과로 받아온 Memo 데이터들을 MemoResponseDto 타입으로 변환해줄 메서드
+                Long id = rs.getLong("id");
+                String username = rs.getString("username");
+                String contents = rs.getString("contents");
+                return new MemoResponseDto(id, username, contents);
+            }
+        });
+    }
+
+
+    /* -------------JDBC 이전 맵에서 수정하던 코드-------------
     //---------UPDATE API----------
     @PutMapping("/memos/{id}") // 받아올 데이터의 인덱스
     public Long updateMemo(@PathVariable Long id, @RequestBody MemoRequestDto requestDto){
@@ -89,7 +162,23 @@ public class MemoController {
             throw new IllegalArgumentException("선택한 메모는 존재하지 않습니다.");
         }
     }
+    */
+    //---------------JDBC 커넥션 연결 이후 UPDATE--------------
+    @PutMapping("/memos/{id}")
+    public Long updateMemo(@PathVariable Long id, @RequestBody MemoRequestDto requestDto) {
+        // 해당 메모가 DB에 존재하는지 확인 (중복되서 아래 메모 존재 확인 메소드를 따로 만듬)
+        Memo memo = findById(id);
+        if(memo != null) {
+            // memo 내용 수정
+            String sql = "UPDATE memo SET username = ?, contents = ? WHERE id = ?";
+            jdbcTemplate.update(sql, requestDto.getUsername(), requestDto.getContents(), id);
 
+            return id;
+        } else {
+            throw new IllegalArgumentException("선택한 메모는 존재하지 않습니다.");
+        }
+    }
+    /* -------------JDBC 이전 맵에서 수정하던 코드-------------
     //--------DELETE API-----------
     @DeleteMapping("/memos/{id}")
     public Long deleteMemo(@PathVariable Long id){
@@ -101,5 +190,38 @@ public class MemoController {
         }else{
             throw new IllegalArgumentException("선택한 메모는 존재하지 않습니다.");
         }
+    }
+    */
+    //---------------JDBC 커넥션 연결 이후 DELETE--------------
+    @DeleteMapping("/memos/{id}")
+    public Long deleteMemo(@PathVariable Long id) {
+        // 해당 메모가 DB에 존재하는지 확인 (중복되서 아래 메모 존재 확인 메소드를 따로 만듬)
+        Memo memo = findById(id);
+        if(memo != null) {
+            // memo 삭제
+            String sql = "DELETE FROM memo WHERE id = ?";
+            jdbcTemplate.update(sql, id);
+
+            return id;
+        } else {
+            throw new IllegalArgumentException("선택한 메모는 존재하지 않습니다.");
+        }
+    }
+
+    //---------------JDBC 커넥션 연결 이후 메모 찾기 추가--------------
+    private Memo findById(Long id) {
+        // DB 조회
+        String sql = "SELECT * FROM memo WHERE id = ?";
+
+        return jdbcTemplate.query(sql, resultSet -> {
+            if(resultSet.next()) {
+                Memo memo = new Memo();
+                memo.setUsername(resultSet.getString("username"));
+                memo.setContents(resultSet.getString("contents"));
+                return memo;
+            } else {
+                return null;
+            }
+        }, id);
     }
 }
