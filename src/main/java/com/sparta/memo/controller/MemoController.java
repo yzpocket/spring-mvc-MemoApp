@@ -89,4 +89,17 @@ public class MemoController {
             throw new IllegalArgumentException("선택한 메모는 존재하지 않습니다.");
         }
     }
+
+    //--------DELETE API-----------
+    @DeleteMapping("/memos/{id}")
+    public Long deleteMemo(@PathVariable Long id){
+        // 해당 메모가 DB로부터 데이터(Entity 실질 객체 상태) 가 있는지 확인
+        if(memoList.containsKey(id)){
+            //해당 메모 삭제하기
+            memoList.remove(id);
+            return id; //[질문] 왜 id를 반환하는것??
+        }else{
+            throw new IllegalArgumentException("선택한 메모는 존재하지 않습니다.");
+        }
+    }
 }
