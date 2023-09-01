@@ -7,6 +7,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -14,6 +17,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
+//@Component // <- bean으로 등록한다는 것. 주입될 대상이라는것. Spring의 편의성이다. Spring의 @ComponentScan이 @Component로 등록된 것들을 모두 찾아서 IoC 컨테이너에 등록해준다.
+@Repository// Repository bean으로 등록한다는 것. @Component와 다른바없지만 더 자세하게 계층을 구분해주는것
 public class MemoRepository {
 
     private final JdbcTemplate jdbcTemplate;
