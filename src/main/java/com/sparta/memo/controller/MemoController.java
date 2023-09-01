@@ -2,9 +2,8 @@ package com.sparta.memo.controller;
 
 import com.sparta.memo.dto.MemoRequestDto;
 import com.sparta.memo.dto.MemoResponseDto;
-import com.sparta.memo.entity.Memo;
+import com.sparta.memo.repository.MemoRepository;
 import com.sparta.memo.service.MemoService;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,36 +28,34 @@ import java.util.List;
 @RequestMapping("/api") // 중복URL 제거
 public class MemoController {
     //--------JDBC이후 DB 커넥션 부분---------
-    private final JdbcTemplate jdbcTemplate;
-    public MemoController(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    //private final MemoService memoService; //*** 컨트롤러가 직접 메모 서비스를 만들고 있다 - 손님이 음식을 직접만들고 있다 = 강한결합상태 좋지않다..
+    private final MemoService memoService; //*** 약한 결합으로 바꿔준다.
+    //public MemoController(JdbcTemplate jdbcTemplate){ //JDBC를 가진 생성자 //그런데 강한결합이다.
+    public MemoController(MemoService memoService){ //외부에서 주입해야 한다했는데 어디서 누가 주입해줘야 하는것이지?? 메인은 없는데 -> IoC 컨테이너???
+        this.memoService = memoService;
     }
 
     // -------------3Layer 분리 이후 CREATE-------------
     @PostMapping("/memos")
     public MemoResponseDto createMemo(@RequestBody MemoRequestDto requestDto) {
-        MemoService memoService = new MemoService(jdbcTemplate);
         return memoService.createMemo(requestDto);
     }
 
     // -------------3Layer 분리 이후 READ-------------
     @GetMapping("/memos")
     public List<MemoResponseDto> getMemos() {
-        MemoService memoService = new MemoService(jdbcTemplate);
         return memoService.getMemos();
     }
 
     // -------------3Layer 분리 이후 UPDATE-------------
     @PutMapping("/memos/{id}")
     public Long updateMemo(@PathVariable Long id, @RequestBody MemoRequestDto requestDto) {
-        MemoService memoService = new MemoService(jdbcTemplate);
         return memoService.updateMemo(id, requestDto);
     }
 
     // -------------3Layer 분리 이후 DELETE-------------
     @DeleteMapping("/memos/{id}")
     public Long deleteMemo(@PathVariable Long id) {
-        MemoService memoService = new MemoService(jdbcTemplate);
         return memoService.deleteMemo(id);
     }
 }
