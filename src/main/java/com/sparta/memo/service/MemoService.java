@@ -4,10 +4,74 @@ import com.sparta.memo.dto.MemoRequestDto;
 import com.sparta.memo.dto.MemoResponseDto;
 import com.sparta.memo.entity.Memo;
 import com.sparta.memo.repository.MemoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
+@Service
+public class MemoService {
+    private final MemoRepository memoRepository; // <- Memo 타입으로 SimpleRepository 구현체 객체가 들어옴
+
+    public MemoService(MemoRepository memoRepository) {
+        this.memoRepository = memoRepository;
+    }
+
+    public MemoResponseDto createMemo(MemoRequestDto requestDto) {
+        // RequestDto -> Entity
+        Memo memo = new Memo(requestDto);
+
+        // DB 저장
+        Memo saveMemo = memoRepository.save(memo);
+
+        // Entity -> ResponseDto
+        MemoResponseDto memoResponseDto = new MemoResponseDto(saveMemo);
+
+        return memoResponseDto;
+    }
+
+    public List<MemoResponseDto> getMemos() {
+        // DB 조회
+        return memoRepository.findAll().stream().map(MemoResponseDto::new).toList(); //전체 목록 가져오는것
+        // <Stream 부분 해석, Memo가 하나씩 추출되고 map()의해 변환이 되는데,
+        // MemoResponseDto의 생성자 중에서 Memo를 파라미터로 가지고 있는 생성자가 호출되고 하나씩 변환되고,
+        // toList()에 의해 리스트로 변환된다.
+    }
+
+    @Transactional //변경감지->업데이트하려면 꼭 Transaction 환경으로 객체가 영속성을 가지도록 (MANAGED) 상태가 되도록 꼭 붙여줘야함 -> 없엔 상태로 테스트했더니 업데이트가 되지 않음.
+    public Long updateMemo(Long id, MemoRequestDto requestDto) {
+        // 해당 메모가 DB에 존재하는지 확인
+        Memo memo = findMemo(id);
+
+        // memo 내용 수정
+        memo.update(requestDto); //변경 감지가 적용됨
+
+        return id;
+    }
+
+    public Long deleteMemo(Long id) {
+        // 해당 메모가 DB에 존재하는지 확인
+        Memo memo = findMemo(id);
+
+        // memo 삭제
+        memoRepository.delete(memo); //지울 객체 넣어준다.
+
+        return id;
+    }
+
+    //update, delete에서 중복되기 때문에 별도 메소드로 구성
+    private Memo findMemo(Long id){
+        return  memoRepository.findById(id).orElseThrow(()->
+            new IllegalArgumentException("선택한 메모는 존재하지 않습니다.")
+        );
+    }
+}
+
+
+
+/*
+
+SPRING BOOT 이전의 공부 주석
 
 //@RequiredArgsConstructor 또는 @Injection 등 다른 방법으로도 주입하기도 한다.
 //@Component // <- bean으로 등록한다는 것. 주입될 대상이라는것. Spring의 편의성이다. Spring의 @ComponentScan이 @Component로 등록된 것들을 모두 찾아서 IoC 컨테이너에 등록해준다.
@@ -31,7 +95,8 @@ public class MemoService {
     //    this.memoRepository = memoRepository;
     //}
 
-    @Autowired // Spring 4.3버전 이후로는 IoC 컨테이너에 주입 할 때, 이 어노테이션이 생략 될 수 있도록 개선되었다. 단 생성자인 경우와 그 생성자가 1개인 경우, 객체의 불변성을 유지하기 위해서 생성자 주입을 추천한다.
+    @Autowired
+    // Spring 4.3버전 이후로는 IoC 컨테이너에 주입 할 때, 이 어노테이션이 생략 될 수 있도록 개선되었다. 단 생성자인 경우와 그 생성자가 1개인 경우, 객체의 불변성을 유지하기 위해서 생성자 주입을 추천한다.
     public MemoService(MemoRepository memoRepository) {//강한 결합이라 문제가 있다.
         //this.jdbcTemplate = jdbcTemplate;//<- 이부분 중복된다.
         //this.memoRepository = new MemoRepository(jdbcTemplate); //여기로, 이 객체가 생성 될 때, //강한 결합이라 문제가 있다.
@@ -89,3 +154,5 @@ public class MemoService {
         }
     }
 }
+
+ */

@@ -46,10 +46,11 @@ public class TransactionTest {
 
     @Test
     @Transactional //만약에 부모가 없는 경우에 테스트해보면, create(3)으로 전파안됨 /기본 Required 옵션, 부모메서드에 트랜잭션이 되있으면, 자손메소드도 트랜잭션도 이어진다(전파된다)
+    @Disabled
     @Rollback(value = false)
     @DisplayName("트랜잭션 전파 테스트")
     void test3() {
-        memoRepository.createMemo(em);     //더이상 테스트안하니까 이것 미사용
+        //memoRepository.createMemo(em);     //더이상 테스트안하니까 이것 미사용
         System.out.println("테스트 test3 메서드 종료");
     }
 }
