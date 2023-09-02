@@ -38,6 +38,11 @@ public class MemoService {
         // toList()에 의해 리스트로 변환된다.
     }
 
+    public List<MemoResponseDto> getMemosByKeyword(String keyword) {
+        // DB 조회 by 키워드
+        return memoRepository.findAllByContentsContainsOrderByModifiedAtDesc(keyword).stream().map(MemoResponseDto::new).toList();
+    }
+
     @Transactional //변경감지->업데이트하려면 꼭 Transaction 환경으로 객체가 영속성을 가지도록 (MANAGED) 상태가 되도록 꼭 붙여줘야함 -> 없엔 상태로 테스트했더니 업데이트가 되지 않음.
     public Long updateMemo(Long id, MemoRequestDto requestDto) {
         // 해당 메모가 DB에 존재하는지 확인
@@ -58,8 +63,8 @@ public class MemoService {
 
         return id;
     }
-
     //update, delete에서 중복되기 때문에 별도 메소드로 구성
+
     private Memo findMemo(Long id){
         return  memoRepository.findById(id).orElseThrow(()->
             new IllegalArgumentException("선택한 메모는 존재하지 않습니다.")
