@@ -92,7 +92,7 @@ public class MemoRepository {
     }
 
     //트랜잭션 전파 예시
-    @Transactional //기본 Required 옵션, 부모메서드에 트랜잭션이 되있으면, 자손메소드도 트랜잭션도 이어진다(전파된다)
+    //@Transactional //기본 Required 옵션, 부모메서드에 트랜잭션이 되있으면, 자손메소드도 트랜잭션도 이어진다(전파된다)
     public Memo createMemo(EntityManager em) {
         Memo memo = em.find(Memo.class, 1);
         memo.setUsername("Robbie");
