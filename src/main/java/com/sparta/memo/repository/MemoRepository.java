@@ -3,6 +3,8 @@ package com.sparta.memo.repository;
 import com.sparta.memo.dto.MemoRequestDto;
 import com.sparta.memo.dto.MemoResponseDto;
 import com.sparta.memo.entity.Memo;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -87,5 +89,16 @@ public class MemoRepository {
                 return null;
             }
         }, id);
+    }
+
+    //트랜잭션 전파 예시
+    @Transactional //기본 Required 옵션, 부모메서드에 트랜잭션이 되있으면, 자손메소드도 트랜잭션도 이어진다(전파된다)
+    public Memo createMemo(EntityManager em) {
+        Memo memo = em.find(Memo.class, 1);
+        memo.setUsername("Robbie");
+        memo.setContents("@Transactional 전파 테스트 중!");
+
+        System.out.println("createMemo 메서드 종료");
+        return memo;
     }
 }
