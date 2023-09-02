@@ -3,7 +3,12 @@ package com.sparta.memo.repository;
 import com.sparta.memo.entity.Memo;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+
 public interface MemoRepository extends JpaRepository<Memo, Long> {
+    List<Memo> findAllByOrderByModifiedAtDesc();
+    List<Memo> findAllByContentsContainsOrderByModifiedAtDesc(String keyword);
+
     //JpaRepository<"@Entity 클래스", "@Id 의 데이터 타입">를 상속받는 interface 로 선언하면
     //지금 삭제된 소스코드들 모두 기본적인 틀이 작성되어있는 프레임워크를 사용만 하면 될 정도로 간편해진다.
     //따라서 현재 이 MemoRepository가 클래스에서 추상화 인터페이스로 변경되면서 삭제된 코드들은

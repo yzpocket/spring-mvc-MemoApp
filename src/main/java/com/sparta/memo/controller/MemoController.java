@@ -32,6 +32,11 @@ public class MemoController {
         return memoService.getMemos();
     }
 
+    @GetMapping("/memos/contents")
+    public List<MemoResponseDto> getMemosByKeyword(String keyword) {
+        return memoService.getMemosByKeyword(keyword);
+    }
+
     // -------------3Layer 분리 이후 UPDATE-------------
     @PutMapping("/memos/{id}")
     public Long updateMemo(@PathVariable Long id, @RequestBody MemoRequestDto requestDto) {
